@@ -250,55 +250,71 @@ def is_available_generic(page_text, cfg):
     return has_open and not only_closed
 
 
+
 def main():
     cfg = load_config()
-    state = load_json(STATE_PATH, default={"available": False}) or {"available": False}
+    state = load_json(STATE_PATH, default={}) or {}
 
-    target_desc = cfg.get("theatre") or cfg.get("requested_date", "target")
-    label = f"{cfg.get('movie', 'movie')} @ {target_desc}"
+    target_desc = cfg.get("requested_date", "target")
+    label = f"{cfg.get('movie', 'Jailer 2')} @ {target_desc}"
 
     try:
         page = fetch(cfg)
     except requests.RequestException as exc:
-        # Transient network/blocking errors shouldn't crash the workflow.
         print(f"[{label}] fetch failed: {exc}")
         return 0
 
-    available = is_available(page, cfg)
-    print(f"Page length: {len(page)} characters")
-    print(f"Contains Sri Thirumala: {'Sri Thirumala' in page}")
-    print(f"[{label}] available={available} (was {state.get('available')})")
+    # Extract theatre names from BookMyShow's embedded page data.
+    import re
+    import html
 
-    if available and not state.get("available"):
-        if cfg.get("detector") in ("bms_date", "venue_date"):
-            rd = cfg["requested_date"]
-            pretty = f"{rd[6:8]}-{rd[4:6]}-{rd[0:4]}"
-            venue = cfg.get("venue_label") or cfg.get("venue_code") or ""
-            venue_line = f"Theatre: {venue}\n" if venue else ""
-            msg = (
-                f"🎬 Booking just OPENED!\n\n"
-                f"{cfg.get('movie', 'Movie')}\n"
-                f"{venue_line}"
-                f"Date: {pretty}\n\n"
-                f"Book here: {cfg['target_url']}"
-            )
-        else:
-            msg = (
-                f"🎬 Booking is OPEN!\n\n"
-                f"{cfg.get('movie', 'Movie')}\n"
-                f"Theatre: {cfg['theatre']}\n\n"
-                f"Book here: {cfg['target_url']}"
-            )
-        send_telegram(cfg["telegram_bot_token"], cfg["telegram_chat_id"], msg)
-        print(f"[{label}] notification sent")
+    names = {
+        html.unescape(name).strip()
+        for name in re.findall(r'"venueName"\s*:\s*"([^"]+)"', page)
+        if name.strip()
+    }
 
-    # Persist current state so we don't re-alert every run.
-    if available != state.get("available"):
-        state["available"] = available
+    if not names:
+        print(f"[{label}] No theatre names found; keeping previous state.")
+        return 0
+
+    previous = set(state.get("theatres", []))
+    print(f"[{label}] Found {len(names)} theatre names.")
+
+    # First run: save the existing list as a baseline without alerts.
+    if "theatres" not in state:
+        state["theatres"] = sorted(names)
         state["checked_at"] = int(time.time())
         save_json(STATE_PATH, state)
+        print("Saved initial theatre list; no alert sent.")
+        return 0
+
+    added = sorted(names - previous)
+
+    if added:
+        rd = cfg.get("requested_date", "")
+        pretty = f"{rd[6:8]}-{rd[4:6]}-{rd[0:4]}" if len(rd) == 8 else rd
+        for theatre in added:
+            msg = (
+                f"🎬 NEW THEATRE ADDED!\n\n"
+                f"{cfg.get('movie', 'Jailer 2')}\n"
+                f"Theatre: {theatre}\n"
+                f"Date: {pretty}\n\n"
+                f"Book here: {cfg.get('target_url', cfg.get('url_template', ''))}"
+            )
+            send_telegram(
+                cfg["telegram_bot_token"],
+                cfg["telegram_chat_id"],
+                msg
+            )
+            print(f"[{label}] Alert sent for: {theatre}")
+
+    state["theatres"] = sorted(names)
+    state["checked_at"] = int(time.time())
+    save_json(STATE_PATH, state)
 
     return 0
+
 
 
 if __name__ == "__main__":
