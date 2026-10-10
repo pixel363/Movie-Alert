@@ -265,6 +265,8 @@ def main():
         return 0
 
     available = is_available(page, cfg)
+    print(f"Page length: {len(page)} characters")
+    print(f"Contains Sri Thirumala: {'Sri Thirumala' in page}")
     print(f"[{label}] available={available} (was {state.get('available')})")
 
     if available and not state.get("available"):
