@@ -1,6 +1,6 @@
 {
   "available": true,
-  "checked_at": 1791831640,
+  "checked_at": 1791832229,
   "theatres": [
     "AMB Cinemas Kapali: Bengaluru",
     "Aruna Theatre A/C 4K 7.1 Dolby 3D: Srirampuram",
@@ -18,7 +18,6 @@
     "Gopalan Cinemas: Arcade Mall, Mysore Road",
     "Gopalan Cinemas: Bannerghatta Road",
     "Gopalan Grand Mall: Old Madras Road",
-    "Gopalan Mall: Sirsi Circle",
     "Gopalan Miniplex: Signature Mall, Old Madras Road",
     "INOX Lido: Off MG Road, Ulsoor",
     "INOX: Brookefield Mall",
@@ -73,6 +72,7 @@
     "Vainidhi Cinemas Dolby Lazer: Singapura",
     "Vaishnavi and Vaibhavi Cinema: Uttarahalli",
     "Veerabhadreshwara Theatre 4KDOLBY 7.1 Kamala Nagar",
-    "Venkateshwara Digital 4K Dolby Atmos A/C: Kengeri"
+    "Venkateshwara Digital 4K Dolby Atmos A/C: Kengeri",
+    "Victory Cinema Barco-4K RGB-Laser: Kamakshipalya"
   ]
 }
